@@ -74,11 +74,19 @@ get_rand_peers() {
 add_peers() {
   IFS=' '
   set -- $valid_peers
+  peersConf=''
   # Добавляем пиров из валидного списка
   for peer in "$@"; do
     yggdrasilctl addpeer uri="$peer"
+    if [ ! -n "$peersConf" ]; then
+      peersConf="\"$peer\""
+    else
+      peersConf="$peersConf, \"$peer\""
+    fi
     echo "Добавлен пир: $peer"
   done
+
+  file_replace_text 'Peers: \[\]' "Peers: [$peersConf]" '/opt/etc/yggdrasil.conf'
 }
 
 confirm() {
@@ -292,11 +300,6 @@ fi
 update_peers=
 if confirm "Load peers list and add them?" "Yes" "No"; then
   log INFO "Load peers list" && load_peers
-
-  if confirm "Select peers count" "1" "3" "6"; then
-    count_peers=$CONFIRM_CHOICE
-  fi
-
   log INFO "Search fastest peers..." && get_rand_peers
   update_peers=1
 fi
