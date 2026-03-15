@@ -511,7 +511,6 @@ else
     echo
     echo 'if [ -z "$(ip6tables-save | grep CUSTOM6YGG_FORWARD)" ]; then'
     echo '    ip6tables -w -N CUSTOM6YGG_FORWARD;'
-    echo '    ip6tables -w -A CUSTOM6YGG_FORWARD -m state --state NEW -j DROP;'
     echo '    ip6tables -w -A CUSTOM6YGG_FORWARD -i br0 -o yggdrasil -j ACCEPT;'
     echo '    ip6tables -w -A CUSTOM6YGG_FORWARD -i yggdrasil -m state --state RELATED,ESTABLISHED -j ACCEPT;'
     echo '    ip6tables -w -A FORWARD -j CUSTOM6YGG_FORWARD;'
