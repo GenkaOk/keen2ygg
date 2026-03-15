@@ -257,7 +257,8 @@ check_peers_empty() {
   fi
 }
 
-
+log INFO "Updating OPKG..." && opkg update
+log INFO "Installing curl, yggdrasil-go, radvd, iptables..." && opkg install curl yggdrasil-go radvd iptables
 
 # Generate yggdrasil configuration
 ygg_changed_config=
@@ -276,8 +277,6 @@ if file_exists "/opt/etc/yggdrasil.conf"; then
   fi
 else
   log INFO "Yggdrasil configuration not found, generating..."
-  log INFO "Updating OPKG..." && opkg update
-  log INFO "Installing curl, yggdrasil-go, radvd, iptables..." && opkg install curl yggdrasil-go radvd iptables
   if yggdrasil -genconf > /opt/etc/yggdrasil.conf; then
     log INFO "Yggdrasil configuration generated successfully."
 
@@ -442,8 +441,10 @@ else
     echo
     echo 'if [ -z "$(ip6tables-save | grep CUSTOM6_FORWARD)" ]; then'
     echo '    ip6tables -w -N CUSTOM6_FORWARD;'
+    echo '    ip6tables -w -A CUSTOM6_FORWARD -m state --state NEW -j DROP;'
     echo '    ip6tables -w -A CUSTOM6_FORWARD -i br0 -o yggdrasil -j ACCEPT;'
     echo '    ip6tables -w -A CUSTOM6_FORWARD -i yggdrasil -m state --state RELATED,ESTABLISHED -j ACCEPT;'
+    echo '    ip6tables -w -I CUSTOM6_FORWARD -p tcp --dport 222 -m state --state NEW -j ACCEPT;'
     echo '    ip6tables -w -A FORWARD -j CUSTOM6_FORWARD;'
     echo 'fi'
   } > /opt/etc/ndm/netfilter.d/iptables.sh
