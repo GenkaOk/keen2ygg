@@ -151,4 +151,8 @@ rm /opt/etc/radvd.conf
 
 rm /opt/etc/ndm/netfilter.d/iptables.sh
 
+ip6tables -w -D FORWARD -j CUSTOM6YGG_FORWARD
+ip6tables -w -F CUSTOM6YGG_FORWARD
+ip6tables -w -X CUSTOM6YGG_FORWARD
+
 opkg remove yggdrasil-go radvd
