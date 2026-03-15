@@ -444,10 +444,12 @@ else
     echo '    ip6tables -w -A CUSTOM6_FORWARD -m state --state NEW -j DROP;'
     echo '    ip6tables -w -A CUSTOM6_FORWARD -i br0 -o yggdrasil -j ACCEPT;'
     echo '    ip6tables -w -A CUSTOM6_FORWARD -i yggdrasil -m state --state RELATED,ESTABLISHED -j ACCEPT;'
-    echo '    ip6tables -w -I CUSTOM6_FORWARD -p tcp --dport 222 -m state --state NEW -j ACCEPT;'
     echo '    ip6tables -w -A FORWARD -j CUSTOM6_FORWARD;'
     echo 'fi'
   } > /opt/etc/ndm/netfilter.d/iptables.sh
+
+  chmod +x /opt/etc/ndm/netfilter.d/iptables.sh
+  /opt/etc/ndm/netfilter.d/iptables.sh
 fi
 
 if ! check_service "/opt/etc/init.d/S82radvd status"; then
