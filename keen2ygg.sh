@@ -257,6 +257,76 @@ check_peers_empty() {
   fi
 }
 
+insert_line() {
+  # $1 - файл
+  # $2 - позиция: first | before_last | last | before_match
+  # $3 - строка для вставки
+  # $4 - (только для before_match) POSIX BRE/regex для поиска (awk ~)
+  file=$1
+  pos=$2
+  line=$3
+  match=$4
+
+  [ -f "$file" ] || return 1
+
+  case "$pos" in
+    first)
+      # вставить как первую строку
+      printf "%s\n" "$line" > "${file}.tmp"
+      cat "$file" >> "${file}.tmp"
+      mv "${file}.tmp" "$file"
+      return $?
+      ;;
+    last)
+      # вставить в конец (последней)
+      cat "$file" > "${file}.tmp"
+      printf "%s\n" "$line" >> "${file}.tmp"
+      mv "${file}.tmp" "$file"
+      return $?
+      ;;
+    before_last)
+      # вставить перед последней строкой
+      awk -v n="$line" '{
+        if (NR==1) { prev=$0; next }
+        print prev
+        prev=$0
+      }
+      END {
+        if (NR==0) { print n; exit }
+        print n
+        print prev
+      }' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+      return $?
+      ;;
+    before_match)
+      # вставить перед первой строкой, совпадающей с regex в $match
+      if [ -z "$match" ]; then
+        return 2
+      fi
+      awk -v n="$line" -v m="$match" '
+      BEGIN{ inserted=0 }
+      {
+        if (!inserted && $0 ~ m) {
+          print n
+          inserted=1
+        }
+        print $0
+      }
+      END {
+        if (!inserted) {
+          # если совпадения не найдено, добавить в конец
+          print n
+        }
+      }' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+      return $?
+      ;;
+    *)
+      return 3
+      ;;
+  esac
+}
+
+
 log INFO "Updating OPKG..." && opkg update
 log INFO "Installing curl, yggdrasil-go, radvd, iptables..." && opkg install curl yggdrasil-go radvd iptables
 
@@ -447,6 +517,14 @@ else
     echo '    ip6tables -w -A FORWARD -j CUSTOM6YGG_FORWARD;'
     echo 'fi'
   } > /opt/etc/ndm/netfilter.d/iptables.sh
+
+  if confirm "Open SSH port (222)?" "Yes" "No"; then
+    insert_line /opt/etc/ndm/netfilter.d/iptables.sh before_last "    ip6tables -A INPUT -p tcp --dport 222 -j ACCEPT -m comment --comment \"YGG:ssh222\";"
+  fi
+
+  if confirm "Open web port (80)?" "Yes" "No"; then
+    insert_line /opt/etc/ndm/netfilter.d/iptables.sh before_last "    ip6tables -A INPUT -p tcp --dport 80 -j ACCEPT -m comment --comment \"YGG:web\";"
+  fi
 
   chmod +x /opt/etc/ndm/netfilter.d/iptables.sh
   /opt/etc/ndm/netfilter.d/iptables.sh

@@ -154,5 +154,7 @@ rm /opt/etc/ndm/netfilter.d/iptables.sh
 ip6tables -w -D FORWARD -j CUSTOM6YGG_FORWARD
 ip6tables -w -F CUSTOM6YGG_FORWARD
 ip6tables -w -X CUSTOM6YGG_FORWARD
+ip6tables -D INPUT -p tcp --dport 222 -j ACCEPT -m comment --comment "YGG:ssh222"
+ip6tables -D INPUT -p tcp --dport 80 -j ACCEPT -m comment --comment "YGG:web"
 
 opkg remove yggdrasil-go radvd
